@@ -1,0 +1,13 @@
+{
+  "projectId": "remix-medikiosk",
+  "appId": "1:913364861483:web:5bb4dabaeb18239788e06e",
+  "apiKey": "AIzaSyDaBBCxQLaRrfIEryULuc4Hq47pbEAm_ZU",
+  "authDomain": "remix-medikiosk.firebaseapp.com",
+  "databaseURL": "https://remix-medikiosk-default-rtdb.firebaseio.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "remix-medikiosk.firebasestorage.app",
+  "messagingSenderId": "913364861483",
+  "measurementId": "G-WMT3QQ2FDZ",
+  "oAuthClientId": "",
+  "recaptchaSiteKey": ""
+}

@@ -1,0 +1,59 @@
+{
+  "patients": [],
+  "doctors": [
+    {
+      "id": "DOC-AYU-001",
+      "doctorId": "DOC-AYU-001",
+      "name": "Dr. Ananya Sharma",
+      "email": "dr.ananya@medikiosk.internal",
+      "phone": "9811002233",
+      "specialization": "Kayachikitsa (Internal Medicine & Panchakarma)",
+      "department": "Kayachikitsa",
+      "opdRoom": "12",
+      "role": "doctor",
+      "accountType": "Development / Test Account",
+      "passwordHash": "c68bd2b3bbf7be151968eb188304852035d0def118f20eb7902f917533b21efb6c675b7c4af820d5c05b4ab7dc9bdbab2f764de845e5c61258ef7ab512615888",
+      "salt": "02a79dde8aea7be4b253d79256bd30d2",
+      "createdAt": "2026-09-14T09:02:05.234Z"
+    }
+  ],
+  "cases": [
+    {
+      "id": "CASE-2026-0001",
+      "caseId": "CASE-2026-0001",
+      "patientId": "TEST-PAT-001",
+      "patient": {
+        "id": "TEST-PAT-001",
+        "name": "Test Patient",
+        "age": 30,
+        "gender": "male",
+        "phone": "9876543210",
+        "abhaId": "9876543210@abdm",
+        "department": "Kayachikitsa"
+      },
+      "tokenNumber": "A-001",
+      "department": "Kayachikitsa",
+      "roomNumber": "12",
+      "status": "Waiting",
+      "chiefComplaint": "Test Headache",
+      "duration": "",
+      "location": "",
+      "triggers": "",
+      "associations": "",
+      "allAnswers": {},
+      "documents": [],
+      "physicianNotes": "",
+      "ayushAssessment": null,
+      "prescriptions": [],
+      "registeredAt": "03:32 AM",
+      "createdAt": "2026-09-17T03:32:17.038Z",
+      "updatedAt": "2026-09-17T03:32:17.038Z"
+    }
+  ],
+  "sessions": {},
+  "counters": {
+    "patientSeq": 0,
+    "caseSeq": 1,
+    "tokenSeq": 1
+  }
+}
