@@ -19,6 +19,7 @@ import { GoogleWorkspaceHubModal } from './components/GoogleWorkspaceHubModal';
 import { LiveVoiceAssistantModal } from './components/v2/LiveVoiceAssistantModal';
 import { SearchGroundingModal } from './components/SearchGroundingModal';
 import { AudioConfirmationBanner } from './components/v2/AudioConfirmationBanner';
+import { unlockAudioContext } from './utils/audioConfirmationEngine';
 import {
   apiGetActiveSession,
   apiLogout,
@@ -776,7 +777,11 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#C9C5AF] bg-ayur-canvas-texture text-[#26312B] flex flex-col font-sans selection:bg-[#B99B6B]/30 selection:text-[#29483C]">
+    <div
+      onClick={() => unlockAudioContext()}
+      onTouchStart={() => unlockAudioContext()}
+      className="min-h-screen bg-[#C9C5AF] bg-ayur-canvas-texture text-[#26312B] flex flex-col font-sans selection:bg-[#B99B6B]/30 selection:text-[#29483C]"
+    >
       {/* Patient Kiosk Terminal Header (Shown during patient kiosk flow) */}
       {activeView === 'kiosk' && (
         <KioskHeader

@@ -12,6 +12,7 @@ import {
 import { motion, useReducedMotion } from 'motion/react';
 import { LanguageCode } from '../../types';
 import { speakPrompt } from '../../utils/speechHelper';
+import { unlockAudioContext } from '../../utils/audioConfirmationEngine';
 import { getUIText } from '../../data/translations';
 import { EcgPulseLine } from './welcome/EcgPulseLine';
 import { AiClinicalNetwork } from './welcome/AiClinicalNetwork';
@@ -56,6 +57,7 @@ export const KioskWelcome: React.FC<KioskWelcomeProps> = ({
   }, [currentLanguage, audioEnabled]);
 
   const handleListen = () => {
+    unlockAudioContext();
     speakPrompt(
       currentLanguage === 'hi'
         ? 'मेडीकियोस्क में आपका स्वागत है। डॉक्टर से मिलने से पहले अपने लक्षणों के बारे में बताने के लिए मरीज इनटेक शुरू करें।'
@@ -67,6 +69,7 @@ export const KioskWelcome: React.FC<KioskWelcomeProps> = ({
   };
 
   const handleStartWithTransition = () => {
+    unlockAudioContext();
     setIsStarting(true);
     setTimeout(() => {
       onStart();
@@ -74,7 +77,11 @@ export const KioskWelcome: React.FC<KioskWelcomeProps> = ({
   };
 
   return (
-    <div className="relative min-h-[82vh] flex flex-col justify-center px-4 sm:px-8 py-8 sm:py-12 max-w-7xl mx-auto select-none overflow-hidden bg-ayur-canvas-texture">
+    <div
+      onClick={() => unlockAudioContext()}
+      onTouchStart={() => unlockAudioContext()}
+      className="relative min-h-[82vh] flex flex-col justify-center px-4 sm:px-8 py-8 sm:py-12 max-w-7xl mx-auto select-none overflow-hidden bg-ayur-canvas-texture"
+    >
       {/* 
         HERO COMPOSITION: Asymmetrical Editorial Composition
         Left: MediKiosk branding, clinical purpose, and CTA buttons
@@ -162,7 +169,10 @@ export const KioskWelcome: React.FC<KioskWelcomeProps> = ({
             {onOpenLiveVoice && (
               <button
                 type="button"
-                onClick={onOpenLiveVoice}
+                onClick={() => {
+                  unlockAudioContext();
+                  onOpenLiveVoice();
+                }}
                 className="w-full h-[46px] px-5 rounded-[8px] text-sm font-semibold text-[#29483C] bg-transparent hover:bg-[#B5B7A1]/40 border border-[#93684F] transition-all flex items-center justify-between cursor-pointer"
               >
                 <span className="flex items-center gap-2">
@@ -183,7 +193,10 @@ export const KioskWelcome: React.FC<KioskWelcomeProps> = ({
             {onScanDocuments && (
               <button
                 type="button"
-                onClick={onScanDocuments}
+                onClick={() => {
+                  unlockAudioContext();
+                  onScanDocuments();
+                }}
                 className="w-full h-[46px] px-5 rounded-[8px] text-sm font-semibold text-[#29483C] bg-[#B5B7A1]/40 hover:bg-[#B5B7A1]/70 border border-[#A9AA94] transition-all flex items-center justify-between cursor-pointer"
               >
                 <span className="flex items-center gap-2">
@@ -204,7 +217,10 @@ export const KioskWelcome: React.FC<KioskWelcomeProps> = ({
             {onLogin && (
               <button
                 type="button"
-                onClick={onLogin}
+                onClick={() => {
+                  unlockAudioContext();
+                  onLogin();
+                }}
                 className="w-full py-2 px-3 rounded-[6px] text-xs font-semibold text-[#596058] hover:text-[#26312B] hover:bg-[#B5B7A1]/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <LogIn className="w-3.5 h-3.5 text-[#596058]" />
@@ -232,7 +248,10 @@ export const KioskWelcome: React.FC<KioskWelcomeProps> = ({
 
             <button
               type="button"
-              onClick={onNeedHelp}
+              onClick={() => {
+                unlockAudioContext();
+                onNeedHelp();
+              }}
               className="text-[#596058] hover:text-[#26312B] flex items-center gap-1.5 cursor-pointer underline underline-offset-4 transition-colors"
             >
               <HelpCircle className="w-3.5 h-3.5 text-[#62745D]" />

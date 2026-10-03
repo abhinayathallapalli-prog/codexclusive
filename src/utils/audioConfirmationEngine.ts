@@ -54,12 +54,76 @@ function updateState(newState: Partial<AudioConfirmationState>) {
   }
 }
 
+// Track user interaction state across the kiosk session
+let hasUserInteracted = false;
+
+/**
+ * Returns whether a verified user gesture (click, tap, keypress) has occurred.
+ */
+export function hasUserInteractedWithAudio(): boolean {
+  return hasUserInteracted;
+}
+
+/**
+ * Safely initializes and unlocks the Web Audio AudioContext upon user interaction
+ * (e.g., clicking on the welcome screen, tapping buttons, or voice recording).
+ * This adheres to modern browser autoplay policies and prevents the warning:
+ * "The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page."
+ */
+export function unlockAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+  hasUserInteracted = true;
+
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return null;
+
+    if (!audioContextInstance || audioContextInstance.state === 'closed') {
+      audioContextInstance = new AudioContextClass();
+    }
+
+    if (audioContextInstance && audioContextInstance.state === 'suspended') {
+      audioContextInstance.resume().catch((err) => {
+        // Log quietly if browser gesture stack was not ready
+        console.warn('[AudioConfirmation] AudioContext resume notice:', err?.message || err);
+      });
+    }
+
+    return audioContextInstance;
+  } catch (err) {
+    console.warn('[AudioConfirmation] AudioContext unlock notice:', err);
+    return null;
+  }
+}
+
+// Global one-time passive gesture listeners to automatically unlock AudioContext on earliest user interaction
+if (typeof window !== 'undefined') {
+  const handleUserGesture = () => {
+    unlockAudioContext();
+    window.removeEventListener('click', handleUserGesture, true);
+    window.removeEventListener('touchstart', handleUserGesture, true);
+    window.removeEventListener('pointerdown', handleUserGesture, true);
+    window.removeEventListener('keydown', handleUserGesture, true);
+  };
+
+  window.addEventListener('click', handleUserGesture, { capture: true, once: true, passive: true });
+  window.addEventListener('touchstart', handleUserGesture, { capture: true, once: true, passive: true });
+  window.addEventListener('pointerdown', handleUserGesture, { capture: true, once: true, passive: true });
+  window.addEventListener('keydown', handleUserGesture, { capture: true, once: true, passive: true });
+}
+
 /**
  * Synthesizes an instantaneous, soft medical chime (two warm harmonic tones: C5 523Hz & E5 659Hz)
  * to give immediate auditory confirmation to low-literacy patients that their touch or scan was registered.
+ * Strictly checks that a user gesture has occurred or AudioContext is active to avoid autoplay policy errors.
  */
 export function playConfirmationChime(volume = 0.18): void {
   if (typeof window === 'undefined') return;
+
+  // STRICT GUARD: Do not attempt to create or resume AudioContext if user hasn't interacted yet.
+  if (!hasUserInteracted && (!audioContextInstance || audioContextInstance.state !== 'running')) {
+    return;
+  }
 
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -70,7 +134,12 @@ export function playConfirmationChime(volume = 0.18): void {
     }
     const ctx = audioContextInstance;
     if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
+      if (hasUserInteracted) {
+        ctx.resume().catch(() => {});
+      }
+      if (ctx.state === 'suspended') {
+        return;
+      }
     }
 
     const now = ctx.currentTime;
