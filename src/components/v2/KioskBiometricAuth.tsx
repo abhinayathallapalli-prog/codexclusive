@@ -17,6 +17,10 @@ import {
 } from 'lucide-react';
 import { LanguageCode, PatientProfile } from '../../types';
 import { speakPrompt } from '../../utils/speechHelper';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 
 interface KioskBiometricAuthProps {
   currentLanguage: LanguageCode;
@@ -227,14 +231,13 @@ export const KioskBiometricAuth: React.FC<KioskBiometricAuthProps> = ({
     setMatchedPatient(patientData);
     stopCameraStream();
 
-    if (audioEnabled) {
-      speakPrompt(
-        currentLanguage === 'hi'
-          ? `प्रमाणीकरण सफल। स्वागत है, ${patientData.nameHi || patientData.name}।`
-          : `Biometric authentication verified. Welcome, ${patientData.name}.`,
-        currentLanguage
-      );
-    }
+    const patName = currentLanguage === 'hi' ? (patientData.nameHi || patientData.name) : patientData.name;
+    const confirmMessage = INTAKE_AUDIO_CONFIRMATIONS.biometricVerified(patName, bioMode, currentLanguage);
+    playAudioConfirmation({
+      text: confirmMessage,
+      language: currentLanguage,
+      audioEnabled,
+    });
 
     onAuthenticated({
       id: patientData.id,

@@ -21,6 +21,10 @@ import { speakPrompt } from '../../utils/speechHelper';
 import { getUIText } from '../../data/translations';
 import { apiLoginPatient, apiRegisterPatient } from '../../lib/api';
 import { KioskBiometricAuth } from './KioskBiometricAuth';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 
 interface KioskPatientIdProps {
   currentLanguage: LanguageCode;
@@ -123,6 +127,12 @@ export const KioskPatientId: React.FC<KioskPatientIdProps> = ({
         age: loggedInPatient.age,
         gender: loggedInPatient.gender as any,
       });
+
+      playAudioConfirmation({
+        text: INTAKE_AUDIO_CONFIRMATIONS.patientLoggedIn(loggedInPatient.name, currentLanguage),
+        language: currentLanguage,
+        audioEnabled,
+      });
     } catch (err: any) {
       setFeedback({
         type: 'error',
@@ -208,6 +218,12 @@ export const KioskPatientId: React.FC<KioskPatientIdProps> = ({
         guardianName: guardianName.trim() || undefined,
         guardianPhone: guardianPhone.trim() || undefined,
       } as any);
+
+      playAudioConfirmation({
+        text: INTAKE_AUDIO_CONFIRMATIONS.patientRegistered(registeredPatient.name, registeredPatient.patientId, currentLanguage),
+        language: currentLanguage,
+        audioEnabled,
+      });
     } catch (err: any) {
       setFeedback({
         type: 'error',

@@ -35,6 +35,10 @@ import { speakPrompt } from '../../utils/speechHelper';
 import { getUIText } from '../../data/translations';
 import { apiAnalyzeDocumentOcr, OcrAnalysisResult } from '../../lib/api';
 import { DocumentPreviewModal } from './DocumentPreviewModal';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 
 interface KioskDocumentsProps {
   currentLanguage: LanguageCode;
@@ -374,6 +378,12 @@ export const KioskDocuments: React.FC<KioskDocumentsProps> = ({
         setIsProcessing(false);
         setScanProgress(0);
         setActiveScanningThumbnail(null);
+
+        playAudioConfirmation({
+          text: INTAKE_AUDIO_CONFIRMATIONS.documentScanned(newDoc.name, currentLanguage),
+          language: currentLanguage,
+          audioEnabled,
+        });
       }, 700);
     } catch (err: any) {
       clearInterval(progressInterval);
@@ -406,6 +416,12 @@ export const KioskDocuments: React.FC<KioskDocumentsProps> = ({
         setIsProcessing(false);
         setScanProgress(0);
         setActiveScanningThumbnail(null);
+
+        playAudioConfirmation({
+          text: INTAKE_AUDIO_CONFIRMATIONS.documentScanned(fallbackDoc.name, currentLanguage),
+          language: currentLanguage,
+          audioEnabled,
+        });
       }, 500);
     }
   };
@@ -967,6 +983,11 @@ export const KioskDocuments: React.FC<KioskDocumentsProps> = ({
           }}
           onConfirmLegibility={(docId) => {
             setVerifiedDocIds((prev) => ({ ...prev, [docId]: true }));
+            playAudioConfirmation({
+              text: INTAKE_AUDIO_CONFIRMATIONS.documentLegibilityVerified(currentLanguage),
+              language: currentLanguage,
+              audioEnabled,
+            });
           }}
           onRetakeOrRemove={(docId) => {
             onRemoveDocument(docId);

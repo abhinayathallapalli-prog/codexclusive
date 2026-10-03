@@ -18,6 +18,7 @@ import { GeminiChatbotModal } from './components/GeminiChatbotModal';
 import { GoogleWorkspaceHubModal } from './components/GoogleWorkspaceHubModal';
 import { LiveVoiceAssistantModal } from './components/v2/LiveVoiceAssistantModal';
 import { SearchGroundingModal } from './components/SearchGroundingModal';
+import { AudioConfirmationBanner } from './components/v2/AudioConfirmationBanner';
 import {
   apiGetActiveSession,
   apiLogout,
@@ -1314,6 +1315,13 @@ export function App() {
         onResetNow={handleInactivityTimeout}
         currentLanguage={currentLanguage}
         audioEnabled={audioEnabled}
+      />
+
+      {/* Floating Audio Confirmation Accessibility Bar with Replay & Waveform */}
+      <AudioConfirmationBanner
+        currentLanguage={currentLanguage}
+        audioEnabled={audioEnabled}
+        onToggleAudio={() => setAudioEnabled(!audioEnabled)}
       />
     </div>
   );

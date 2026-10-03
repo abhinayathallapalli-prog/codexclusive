@@ -1,5 +1,17 @@
 import { LanguageCode } from '../types';
-import { getVoiceRecognitionLang, getVoiceRecognitionFallbacks } from './languageSpeechModule';
+import { getVoiceLangByCode } from '../config/speechLanguageConfig';
+import { apiTranscribeAudio } from '../lib/speechApi';
+
+export function getVoiceRecognitionLang(code: LanguageCode): string {
+  const lang = getVoiceLangByCode(code);
+  return lang?.googleLanguageCode || 'hi-IN';
+}
+
+export function getVoiceRecognitionFallbacks(code: LanguageCode): string[] {
+  const lang = getVoiceLangByCode(code);
+  const primary = lang?.googleLanguageCode || 'hi-IN';
+  return Array.from(new Set([primary, 'hi-IN', 'en-IN']));
+}
 
 export interface SpeechEngineResult {
   transcript: string;
@@ -13,7 +25,7 @@ export interface SpeechEngineResult {
   redFlagDetected?: boolean;
   redFlagReason?: string | null;
   confidence?: number;
-  source: 'webspeech' | 'gemini-audio' | 'combined' | 'manual';
+  source: 'google_speech_v2' | 'gemini-audio' | 'combined' | 'manual' | 'webspeech';
   rawAudioBlob?: Blob;
 }
 
@@ -26,7 +38,7 @@ export interface SpeechEngineCallbacks {
 }
 
 /**
- * Checks capabilities of the current browser environment
+ * Checks capabilities of the current browser environment for audio capture
  */
 export function checkSpeechCapabilities() {
   const hasGetUserMedia = Boolean(
@@ -40,11 +52,6 @@ export function checkSpeechCapabilities() {
     typeof (window as any).MediaRecorder === 'function'
   );
 
-  const hasSpeechRecognition = Boolean(
-    typeof window !== 'undefined' &&
-    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-  );
-
   const hasAudioContext = Boolean(
     typeof window !== 'undefined' &&
     (window.AudioContext || (window as any).webkitAudioContext)
@@ -53,9 +60,8 @@ export function checkSpeechCapabilities() {
   return {
     hasGetUserMedia,
     hasMediaRecorder,
-    hasSpeechRecognition,
     hasAudioContext,
-    isFullySupported: hasGetUserMedia && (hasMediaRecorder || hasSpeechRecognition),
+    isFullySupported: hasGetUserMedia && hasMediaRecorder,
   };
 }
 

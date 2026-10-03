@@ -5,6 +5,10 @@ import { TextEffect } from '@/components/core/text-effect';
 import { LanguageCode } from '../../types';
 import { speakPrompt } from '../../utils/speechHelper';
 import { getUIText } from '../../data/translations';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 
 interface KioskConsentProps {
   currentLanguage: LanguageCode;
@@ -22,7 +26,16 @@ export const KioskConsent: React.FC<KioskConsentProps> = ({
   audioEnabled,
 }) => {
   const t = getUIText(currentLanguage);
-  const handleAgree = onAgree || onAccept;
+  const triggerAgree = onAgree || onAccept;
+
+  const handleAgreeClick = () => {
+    playAudioConfirmation({
+      text: INTAKE_AUDIO_CONFIRMATIONS.consentAccepted(currentLanguage),
+      language: currentLanguage,
+      audioEnabled,
+    });
+    triggerAgree?.();
+  };
 
   useEffect(() => {
     if (audioEnabled) {
@@ -125,7 +138,7 @@ export const KioskConsent: React.FC<KioskConsentProps> = ({
         <motion.button
           id="btn-kiosk-agree"
           type="button"
-          onClick={() => handleAgree?.()}
+          onClick={handleAgreeClick}
           whileHover={{ y: -2 }}
           whileTap={{ scale: 0.99 }}
           className="w-full max-w-md h-[52px] px-8 bg-[#29483C] hover:bg-[#1f372e] text-[#F0EBDD] text-base sm:text-lg font-semibold rounded-[8px] flex items-center justify-center gap-3 cursor-pointer transition-all border border-[#29483C]"

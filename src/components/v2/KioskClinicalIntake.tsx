@@ -30,6 +30,10 @@ import {
   ClinicalSeverityRating,
 } from '../../types';
 import { speakPrompt, stopSpeech } from '../../utils/speechHelper';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 import { VoiceToTextInput, VoiceLanguage } from './VoiceToTextInput';
 import { PrescriptionScannerModal } from './PrescriptionScannerModal';
 import { GeminiProcessingIndicator } from './GeminiProcessingIndicator';
@@ -527,6 +531,27 @@ export const KioskClinicalIntake: React.FC<KioskClinicalIntakeProps> = ({
         setIsShowingRatingScale(true);
         return;
       }
+    }
+
+    const currentAnswer =
+      currentStep === 1
+        ? answer1Complaint
+        : currentStep === 2
+        ? answer2Duration
+        : currentStep === 3
+        ? answer3Location
+        : currentStep === 4
+        ? answer4Previous
+        : currentStep === 5
+        ? answer5Medications
+        : answer6Reports;
+
+    if (currentAnswer && currentAnswer.trim() && audioEnabled) {
+      playAudioConfirmation({
+        text: INTAKE_AUDIO_CONFIRMATIONS.symptomRecorded(currentAnswer.trim(), currentLanguage),
+        language: currentLanguage,
+        audioEnabled,
+      });
     }
 
     setIsAnalyzing(true);

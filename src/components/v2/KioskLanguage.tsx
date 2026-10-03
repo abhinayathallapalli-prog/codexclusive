@@ -3,6 +3,10 @@ import { Volume2, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { LanguageCode } from '../../types';
 import { SUPPORTED_LANGUAGES, getUIText } from '../../data/translations';
 import { speakPrompt } from '../../utils/speechHelper';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 
 interface KioskLanguageProps {
   currentLanguage: LanguageCode;
@@ -35,8 +39,15 @@ export const KioskLanguage: React.FC<KioskLanguageProps> = ({
     if (selectLanguage) {
       selectLanguage(lang);
     }
-    const newT = getUIText(lang);
-    speakPrompt(newT.chooseLanguageAudio, lang);
+    const matched = SUPPORTED_LANGUAGES.find((l) => l.code === lang);
+    const label = matched?.nativeLabel || matched?.label || lang;
+    const confirmMessage = INTAKE_AUDIO_CONFIRMATIONS.languageSelected(label, lang);
+
+    playAudioConfirmation({
+      text: confirmMessage,
+      language: lang,
+      audioEnabled,
+    });
   };
 
   return (

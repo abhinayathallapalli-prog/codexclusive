@@ -3,6 +3,8 @@ import { Mic, MicOff, Check, Volume2, Info, ArrowRight, RotateCcw, AlertCircle }
 import { motion, AnimatePresence } from 'motion/react';
 import { LanguageCode, ClinicalSeverityRating, SeverityScaleType } from '../../types';
 import { speakPrompt } from '../../utils/speechHelper';
+import { startAudioCapture, blobToBase64, AudioCaptureController } from '../../utils/audioCapture';
+import { apiTranscribeAudio } from '../../lib/speechApi';
 
 export interface ScaleTier {
   min: number;
@@ -463,7 +465,7 @@ export const AdaptiveRatingScale: React.FC<AdaptiveRatingScaleProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState<string>('');
   const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const captureRef = useRef<AudioCaptureController | null>(null);
 
   // Find active tier
   const activeTier =
@@ -482,93 +484,72 @@ export const AdaptiveRatingScale: React.FC<AdaptiveRatingScaleProps> = ({
     }
   }, [audioEnabled, resolvedLang, config.title]);
 
-  // Voice recognition setup
-  const startListening = () => {
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setVoiceNotice(
-        resolvedLang === 'hi'
-          ? 'इस ब्राउज़र में वॉइस उपलब्ध नहीं है, कृपया नंबर चुनें।'
-          : resolvedLang === 'te'
-          ? 'వాయిస్ అందుబాటులో లేదు, దయచేసి సంఖ్యను ఎంచుకోండి.'
-          : 'Microphone not supported. Please select a number manually.'
-      );
-      return;
-    }
-
+  // Voice recognition setup using Google Speech V2 pipeline
+  const startListening = async () => {
     try {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-      }
+      setIsListening(true);
+      setVoiceNotice(null);
 
-      const recognition = new SpeechRecognition();
-      recognition.lang = resolvedLang === 'hi' ? 'hi-IN' : resolvedLang === 'te' ? 'te-IN' : 'en-IN';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 3;
+      const controller = await startAudioCapture({
+        timeSliceMs: 500,
+        silenceTimeoutMs: 3000,
+        onSilenceTimeout: () => {
+          stopListening();
+        },
+        onError: (err) => {
+          setIsListening(false);
+          setVoiceNotice(err.message || 'Microphone error.');
+        },
+      });
 
-      recognition.onstart = () => {
-        setIsListening(true);
-        setVoiceNotice(null);
-      };
-
-      recognition.onresult = (event: any) => {
-        const spoken = event.results[0][0].transcript;
-        setVoiceTranscript(spoken);
-
-        const parsed = parseSpokenRating(spoken, maxVal);
-        if (parsed !== null) {
-          setSelectedValue(parsed);
-          setVoiceNotice(
-            resolvedLang === 'hi'
-              ? `पहचाना गया: ${parsed} — पुष्टि के लिए आगे बढ़ें`
-              : resolvedLang === 'te'
-              ? `గుర్తించబడింది: ${parsed} — కొనసాగించండి`
-              : `Recognized: ${parsed} — Tap Continue to confirm`
-          );
-        } else {
-          setVoiceNotice(
-            resolvedLang === 'hi'
-              ? 'कृपया 0 से 10 के बीच अपना दर्द या लक्षण स्तर चुनें।'
-              : resolvedLang === 'te'
-              ? 'దయచేసి 0 నుండి 10 వరకు మీ నొప్పి స్థాయిని ఎంచుకోండి.'
-              : `Please select your level from 0 to ${maxVal}.`
-          );
-        }
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        setVoiceNotice(
-          resolvedLang === 'hi'
-            ? 'कृपया 0 से 10 के बीच अपना दर्द या लक्षण स्तर चुनें।'
-            : resolvedLang === 'te'
-            ? 'దయచేసి 0 నుండి 10 వరకు మీ నొప్పి స్థాయిని ఎంచుకోండి.'
-            : `Please select your level from 0 to ${maxVal}.`
-        );
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch {
+      captureRef.current = controller;
+    } catch (err: any) {
       setIsListening(false);
-      setVoiceNotice(
-        resolvedLang === 'hi'
-          ? 'कृपया 0 से 10 के बीच अपना स्तर चुनें।'
-          : `Please select your level from 0 to ${maxVal}.`
-      );
+      setVoiceNotice(err.message || 'Microphone permission blocked or unavailable.');
     }
   };
 
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+  const stopListening = async () => {
+    if (!captureRef.current) return;
+    const controller = captureRef.current;
+    captureRef.current = null;
+    setIsListening(false);
+
+    try {
+      const { fullAudioBlob, mimeType } = await controller.stop();
+      if (!fullAudioBlob || fullAudioBlob.size === 0) return;
+
+      const audioBase64 = await blobToBase64(fullAudioBlob);
+      const googleLang = resolvedLang === 'hi' ? 'hi-IN' : resolvedLang === 'te' ? 'te-IN' : 'en-IN';
+
+      const result = await apiTranscribeAudio({
+        audioBase64,
+        mimeType,
+        languageCode: googleLang,
+      });
+
+      const spoken = result.normalizedTranscript || result.rawTranscript || '';
+      setVoiceTranscript(spoken);
+
+      const parsed = parseSpokenRating(spoken, maxVal);
+      if (parsed !== null) {
+        setSelectedValue(parsed);
+        setVoiceNotice(
+          resolvedLang === 'hi'
+            ? `पहचाना गया: ${parsed} — पुष्टि के लिए आगे बढ़ें`
+            : resolvedLang === 'te'
+            ? `గుర్తించబడింది: ${parsed} — కొనసాగించండి`
+            : `Recognized: ${parsed} — Tap Continue to confirm`
+        );
+      } else {
+        setVoiceNotice(
+          resolvedLang === 'hi'
+            ? 'कृपया 0 से 10 के बीच अपना स्तर चुनें।'
+            : `Please select your level from 0 to ${maxVal}.`
+        );
+      }
+    } catch (err: any) {
+      setVoiceNotice(err.message || 'Voice recognition error.');
     }
   };
 

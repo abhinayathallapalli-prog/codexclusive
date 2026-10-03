@@ -2026,6 +2026,62 @@ Formulate the next dynamic intake response or complete the intake. Output strict
   }
 });
 
+// Endpoint: Text-to-Speech Audio Confirmations via Gemini 3.8 Flash Lite TTS
+app.post("/api/tts", async (req, res) => {
+  const { text, voice = "Kore" } = req.body;
+  if (!text || typeof text !== "string" || !text.trim()) {
+    return res.status(400).json({ error: "Missing 'text' field", fallbackToBrowser: true });
+  }
+
+  try {
+    const ai = getGemini();
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash-lite-tts",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: text.trim(),
+            },
+          ],
+        },
+      ] as any,
+      config: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: voice || "Kore" },
+          },
+        },
+      },
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (base64Audio) {
+      return res.json({
+        success: true,
+        audioBase64: base64Audio,
+        mimeType: "audio/wav",
+        source: "gemini-tts",
+      });
+    }
+
+    res.json({
+      success: false,
+      fallbackToBrowser: true,
+      message: "No audio generated from model",
+    });
+  } catch (err: any) {
+    console.warn("[TTS Endpoint] Notice generating Gemini TTS:", err?.message || err);
+    res.json({
+      success: false,
+      fallbackToBrowser: true,
+      error: err?.message || String(err),
+    });
+  }
+});
+
 // Endpoint: Multimodal Speech-to-Text & Clinical Translation via Gemini
 app.post("/api/transcribe-audio", async (req, res) => {
   const { audioBase64, mimeType = "audio/webm", language = "hi", fallbackTranscript = "" } = req.body;
@@ -3274,6 +3330,25 @@ async function startServer() {
         const indexPath = path.resolve(process.cwd(), "index.html");
         let template = fs.readFileSync(indexPath, "utf-8");
         template = await vite.transformIndexHtml(url, template);
+
+        // Ensure React Refresh preamble is installed for @vitejs/plugin-react
+        const reactRefreshPreamble = `
+    <script type="module">
+      try {
+        const RefreshRuntime = (await import("/@react-refresh")).default;
+        RefreshRuntime.injectIntoGlobalHook(window);
+        window.$RefreshReg$ = () => {};
+        window.$RefreshSig$ = () => (type) => type;
+        window.__vite_plugin_react_preamble_installed__ = true;
+      } catch (e) {
+        console.warn("[Vite Refresh] Preamble init notice:", e);
+      }
+    </script>`;
+
+        if (!template.includes("__vite_plugin_react_preamble_installed__")) {
+          template = template.replace("<head>", `<head>${reactRefreshPreamble}`);
+        }
+
         res.status(200).set({ "Content-Type": "text/html" }).end(template);
       } catch (e: any) {
         vite.ssrFixStacktrace(e);

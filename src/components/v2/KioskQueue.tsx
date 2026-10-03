@@ -5,6 +5,10 @@ import { CheckCircle2, Printer, RefreshCw, Volume2, Clock, MapPin } from 'lucide
 import { LanguageCode } from '../../types';
 import { speakPrompt } from '../../utils/speechHelper';
 import { getUIText } from '../../data/translations';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 
 interface KioskQueueProps {
   currentLanguage: LanguageCode;
@@ -34,14 +38,19 @@ export const KioskQueue: React.FC<KioskQueueProps> = ({
   const activeDoctor = doctorName || 'Dr. Ananya Sharma';
   const handleFinish = onFinish || onReset;
 
-  const audioMessage =
-    currentLanguage === 'hi'
-      ? `पंजीकरण सफल रहा। आपका टोकन नंबर ${tokenNumber} है। कृपया ओपीडी कक्ष संख्या ${roomNumber} के प्रतीक्षा क्षेत्र में बैठें।`
-      : `Registration complete. Your token number is ${tokenNumber}. Please proceed to OPD waiting area Room ${roomNumber}.`;
+  const audioMessage = INTAKE_AUDIO_CONFIRMATIONS.queueTokenReady(
+    tokenNumber,
+    roomNumber,
+    currentLanguage
+  );
 
   useEffect(() => {
     if (audioEnabled) {
-      speakPrompt(audioMessage, currentLanguage);
+      playAudioConfirmation({
+        text: audioMessage,
+        language: currentLanguage,
+        audioEnabled,
+      });
     }
   }, [currentLanguage, audioEnabled, audioMessage]);
 

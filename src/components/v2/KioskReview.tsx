@@ -8,6 +8,10 @@ import { getUIText } from '../../data/translations';
 import { PatientHistorySummaryCard, PatientHistoryData } from './PatientHistorySummaryCard';
 import { PatientHistoryOverview } from './PatientHistoryOverview';
 import { SymptomConfidenceIndicator } from './SymptomConfidenceIndicator';
+import {
+  playAudioConfirmation,
+  INTAKE_AUDIO_CONFIRMATIONS,
+} from '../../utils/audioConfirmationEngine';
 
 interface KioskReviewProps {
   currentLanguage: LanguageCode;
@@ -102,6 +106,15 @@ export const KioskReview: React.FC<KioskReviewProps> = ({
   };
 
   const handleProceed = onConfirm || onNext;
+
+  const handleConfirmClick = () => {
+    playAudioConfirmation({
+      text: INTAKE_AUDIO_CONFIRMATIONS.reviewConfirmed(currentLanguage),
+      language: currentLanguage,
+      audioEnabled,
+    });
+    handleProceed?.();
+  };
 
   useEffect(() => {
     if (audioEnabled) {
@@ -361,7 +374,7 @@ export const KioskReview: React.FC<KioskReviewProps> = ({
       <div className="flex items-center justify-center">
         <motion.button
           type="button"
-          onClick={() => handleProceed?.()}
+          onClick={handleConfirmClick}
           whileHover={{ translateY: -2 }}
           whileTap={{ scale: 0.985 }}
           className="group w-full sm:w-auto min-w-[280px] h-[52px] px-8 bg-[#29483C] hover:bg-[#1d332a] active:scale-95 text-[#F0EBDD] text-base font-semibold rounded-[8px] flex items-center justify-center gap-3 cursor-pointer transition-all border border-[#29483C]"
