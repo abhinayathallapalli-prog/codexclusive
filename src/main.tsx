@@ -17,16 +17,18 @@ if (rootElement) {
       </StrictMode>
     );
 
-    // Remove the static HTML loader once initial render tree is created
-    setTimeout(() => {
+    // Fade out and remove the standalone splash loader once React renders
+    requestAnimationFrame(() => {
       const loader = document.getElementById('medikiosk-initial-loader');
       if (loader) {
-        loader.remove();
+        loader.style.opacity = '0';
+        setTimeout(() => {
+          loader.remove();
+        }, 300);
       }
-    }, 50);
+    });
   } catch (mountErr) {
     console.error('[MediKiosk Mount Error]', mountErr);
-    // If mounting fails, display fallback UI
     rootElement.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#C9C5AF;font-family:sans-serif;padding:20px;">
         <div style="background:#E3DDCA;border:1px solid #A9AA94;border-radius:10px;padding:24px;max-width:480px;text-align:center;">

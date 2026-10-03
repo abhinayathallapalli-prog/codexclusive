@@ -586,6 +586,38 @@ export async function saveDirectPatientCaseToFirestore(caseData: {
   }
 }
 
+/**
+ * Direct client-side Firestore registration for patients (offline/static deployment fallback)
+ */
+export async function saveDirectPatientToFirestore(patientData: {
+  id: string;
+  patientId: string;
+  name: string;
+  phone: string;
+  age: number;
+  gender: string;
+  preferredLanguage?: string;
+  address?: string;
+  pregnancyStatus?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+}): Promise<void> {
+  try {
+    const patientDocRef = doc(db, 'patients', patientData.id);
+    await setDoc(
+      patientDocRef,
+      {
+        ...patientData,
+        createdAt: new Date().toISOString(),
+        serverCreatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn('[Firestore] Client-side patient save note:', err);
+  }
+}
+
 export interface PastMedicalEncounter {
   id: string;
   encounterDate: string;
